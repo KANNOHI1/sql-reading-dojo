@@ -1,0 +1,99 @@
+# Lv0 地図 — クエリの読み方の全体像
+- id: L0-01
+  level: L0
+  title: クエリは「表から表への変換」
+  minutes: 4
+  intro: |
+    SQL のクエリは 1 つの**命令文**です。
+    入力の表を受け取り、**いくつかの段階で変形して、1 枚の表を返す**。それだけです。
+
+    Alteryx のワークフローが「入力 → フィルター → セレクト → 出力」と流れるのと同じで、
+    クエリも「FROM → WHERE → SELECT」という段階の連なりとして読めます。
+
+    まず 1 本、動きを見てみましょう。
+  datasets: [customers]
+  query:
+    - clause: SELECT
+      sql: "SELECT customer_name, channel"
+      ja: 得意先名とチャネルの 2 列を表示する
+    - clause: FROM
+      sql: "FROM `dojo.customers`"
+      ja: 得意先テーブルを使う
+    - clause: WHERE
+      sql: "WHERE region = '関東'"
+      ja: 地域が関東の行だけ残す
+  tasks:
+    - type: vocab
+      text: |
+        実行順に表が変わっていく様子を見てください。
+        **FROM** で表を持ってきて、**WHERE** で行を絞り、**SELECT** で列を選ぶ。
+        書かれた順（SELECT が先頭）とは違う順で動いていることに注目。
+    - type: quiz
+      prompt: このクエリを Alteryx のワークフローに置き換えると、ツールの並びはどれ？
+      choices:
+        - セレクト → 入力データ → フィルター
+        - 入力データ → フィルター → セレクト
+        - 入力データ → セレクト → フィルター
+      answer: 1
+      explain: |
+        FROM が入力データ、WHERE がフィルター、SELECT がセレクトです。
+        SQL は SELECT を先頭に書きますが、**実行は FROM → WHERE → SELECT** の順。
+        「先頭に書いてあるものが最初に動く」という直感を、ここで一度捨てます。
+
+- id: L0-02
+  level: L0
+  title: 書かれた順と実行される順
+  minutes: 5
+  intro: |
+    クエリの句（SELECT、FROM、WHERE …）は、**書く順番**が決まっています。
+    ところが**実行される順番**はそれとは別です。
+
+    | 書かれる順 | 実行される順 |
+    |---|---|
+    | SELECT | FROM（表を取る） |
+    | FROM | WHERE（行を絞る） |
+    | WHERE | SELECT（列を選ぶ） |
+    | ORDER BY | ORDER BY（並べる） |
+    | LIMIT | LIMIT（先頭 N 行） |
+
+    読むときは **FROM から読み始める**のがコツです。
+    「何の表から、どの行を残し、どの列を見せ、どう並べ、何行出すか」。
+  datasets: [products]
+  query:
+    - clause: SELECT
+      sql: "SELECT product_name, list_price"
+      ja: 商品名と定価を表示する
+    - clause: FROM
+      sql: "FROM `dojo.products`"
+      ja: 商品テーブルを使う
+    - clause: WHERE
+      sql: "WHERE category = 'スキンケア'"
+      ja: カテゴリがスキンケアの行だけ残す
+    - clause: ORDER BY
+      sql: "ORDER BY list_price DESC"
+      ja: 定価の高い順に並べる
+    - clause: LIMIT
+      sql: "LIMIT 2"
+      ja: 先頭の 2 行だけ出す
+  tasks:
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行になる？
+      choices: [2, 4, 10]
+      answer: 2
+      explain: |
+        スキンケアの商品は 4 つありますが、最後の LIMIT 2 で先頭 2 行だけになります。
+        WHERE で 10 → 4 行、ORDER BY で並べ替え、LIMIT で 4 → 2 行。
+    - type: predict
+      ask: cell
+      row: 0
+      col: product_name
+      prompt: 1 行目に来る商品はどれ？
+      choices: ["ルミナ クリーム", "ルミナ 美容液", "ルミナ 化粧水"]
+      answer: "ルミナ クリーム"
+      explain: |
+        ORDER BY list_price DESC は「定価の高い順」。スキンケア 4 品の中で最高値はクリーム（12,000 円）。
+        ちなみにクリームはまだ発売前ですが、このクエリは発売日を見ていないので普通に出てきます。
+        **要件が「販売中の商品」なら、このクエリはズレています**——こういう気づきが、このサイトのゴールです。
+    - type: readline
+      text: 各行をクリックして、日本語の読み下しを確認してください。FROM から読むと自然に読めます。

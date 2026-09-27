@@ -1,0 +1,37 @@
+# レベル定義。id はレッスン ID の接頭辞（L1-03 など）に一致させる
+- id: L0
+  rank: 地図
+  title: クエリの読み方の全体像
+  summary: SQL とは何か。書かれた順と実行される順のズレ。
+- id: L1
+  rank: 語彙
+  title: 基本の 6 語
+  summary: FROM / SELECT / WHERE / NULL / ORDER BY / LIMIT / DISTINCT
+- id: L2
+  rank: 集計係
+  title: 集計と粒度
+  summary: COUNT / SUM / AVG、GROUP BY、HAVING、「1 行が何の単位か」
+- id: L3
+  rank: 結合師
+  title: JOIN と 3 つの罠
+  summary: INNER / LEFT / FULL、fan-out、LEFT→INNER 化、NOT IN と NULL
+- id: L4
+  rank: 変換師
+  title: 変換・日付・割り算
+  summary: CASE / COALESCE / CAST、日付関数、UTC と JST、SAFE_DIVIDE
+- id: L5
+  rank: 読解者
+  title: 構造を読む
+  summary: サブクエリ、WITH（CTE）、目的から逆算して読む
+- id: L6
+  rank: 分析官
+  title: ウィンドウ関数
+  summary: OVER / PARTITION BY、ROW_NUMBER、LAG、QUALIFY
+- id: L7
+  rank: BQ使い
+  title: BigQuery 固有の作法
+  summary: パーティション、スキャン量、ARRAY / STRUCT / UNNEST
+- id: L8
+  rank: 実務
+  title: 実務級クエリ × 要件書
+  summary: 100 行級クエリのズレ探し。卒業試験

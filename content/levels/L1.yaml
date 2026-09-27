@@ -1,0 +1,486 @@
+# Lv1 語彙 — 基本の 6 語
+- id: L1-01
+  level: L1
+  title: FROM と SELECT — 表を取って、列を選ぶ
+  minutes: 4
+  intro: |
+    最初の 2 語です。
+
+    - **FROM** … どの表を使うか。Alteryx の**入力データ**。
+    - **SELECT** … 表示する**列**を選ぶ。Alteryx の**セレクト**。
+
+    `SELECT product_name, brand` と書けば、その 2 列だけが残ります。
+    行は 1 行も減りません。**SELECT は列を選ぶだけで、行には触らない**——ここを押さえておくと後で効きます。
+  datasets: [products]
+  query:
+    - clause: SELECT
+      sql: "SELECT product_name, brand"
+      ja: 商品名とブランドの 2 列を表示する
+    - clause: FROM
+      sql: "FROM `dojo.products`"
+      ja: 商品テーブルを使う
+  tasks:
+    - type: vocab
+      text: |
+        FROM で商品テーブル（10 行 × 6 列）を取り、SELECT で 2 列に絞ります。
+        列は減りますが、**行数は 10 のまま**です。
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行になる？
+      choices: [2, 6, 10]
+      answer: 10
+      explain: SELECT は列を選ぶだけなので、行数は元の表と同じ 10 行です。
+    - type: quiz
+      prompt: SELECT の役割として正しいのはどれ？
+      choices:
+        - 条件に合う行だけを残す
+        - 表示する列を選ぶ
+        - 表を並べ替える
+      answer: 1
+      explain: 行を絞るのは WHERE、並べ替えは ORDER BY。SELECT は「列」の担当です。
+
+- id: L1-02
+  level: L1
+  title: SELECT の式と AS — 列を作る・名前を変える
+  minutes: 5
+  intro: |
+    SELECT には列名だけでなく**式**も書けます。`list_price - 300` のように。
+    そのとき **AS** で新しい列に名前を付けます。
+
+    Alteryx なら**フォーミュラ**で新しい列を作り、**セレクト**で名前を変える、の 2 ツール分を SELECT 1 句でやっています。
+
+    読むときのコツ: `AS` の右側が**結果に出てくる列名**です。エンジニアのクエリでは、この名前が Tableau や資料の項目名になります。
+  datasets: [products]
+  query:
+    - clause: SELECT
+      sql: "SELECT product_name, list_price, list_price - 300 AS campaign_price"
+      ja: 商品名・定価と、定価から 300 円引いた値を campaign_price という名前で表示する
+    - clause: FROM
+      sql: "FROM `dojo.products`"
+      ja: 商品テーブルを使う
+    - clause: WHERE
+      sql: "WHERE brand = 'ソラ'"
+      ja: ブランドがソラの行だけ残す
+    - clause: ORDER BY
+      sql: "ORDER BY list_price DESC"
+      ja: 定価の高い順に並べる
+  tasks:
+    - type: predict
+      ask: cell
+      row: 0
+      col: campaign_price
+      prompt: 1 行目の campaign_price はいくら？
+      choices: [1900, 2200, 1500]
+      answer: 1900
+      explain: |
+        ソラの 3 品を定価の高い順に並べると先頭は日焼け止め（2,200 円）。300 円引いて 1,900。
+        結果の列名は `list_price - 300` ではなく、AS で付けた **campaign_price** になります。
+    - type: quiz
+      prompt: "`list_price - 300 AS campaign_price` を Alteryx で再現するなら？"
+      choices:
+        - フィルターで list_price を絞る
+        - フォーミュラで新列 campaign_price を作る
+        - 集計で list_price を合計する
+      answer: 1
+      explain: SELECT の中の式 = フォーミュラツール。AS = その出力列名です。
+    - type: readline
+      text: 各行をクリックして読み下しを確認。SELECT 行が一番長いですが、「表示する列のリスト」だと思えば読めます。
+
+- id: L1-03
+  level: L1
+  title: WHERE — 行を絞る
+  minutes: 5
+  intro: |
+    **WHERE** は条件に合う**行**だけを残します。Alteryx の**フィルター**そのものです。
+
+    条件には `=`、`<>`（等しくない）、`>`、`>=`、`<`、`<=` が使えます。
+    複数の条件は **AND**（両方）と **OR**（どちらか）でつなぎます。
+
+    読むときは「**この条件を満たす行が残る**」と読み下してください。
+    「除外する」と読むと逆に取り違えやすいので、常に「残る側」で読みます。
+  datasets: [products]
+  query:
+    - clause: SELECT
+      sql: "SELECT product_name, category, list_price"
+      ja: 商品名・カテゴリ・定価を表示する
+    - clause: FROM
+      sql: "FROM `dojo.products`"
+      ja: 商品テーブルを使う
+    - clause: WHERE
+      sql: "WHERE list_price > 3000 AND category = 'スキンケア'"
+      ja: 定価が 3,000 円より高く、かつカテゴリがスキンケアの行だけ残す
+  tasks:
+    - type: vocab
+      text: WHERE の段階で 10 行 → 4 行に減ります。AND なので両方の条件を満たす行だけが残ります。
+    - type: predict
+      ask: rowCount
+      prompt: AND を OR に変えたら何行になる？
+      query:
+        - clause: SELECT
+          sql: "SELECT product_name, category, list_price"
+          ja: 商品名・カテゴリ・定価を表示する
+        - clause: FROM
+          sql: "FROM `dojo.products`"
+          ja: 商品テーブルを使う
+        - clause: WHERE
+          sql: "WHERE list_price > 3000 OR category = 'スキンケア'"
+          ja: 定価が 3,000 円より高い、またはカテゴリがスキンケアの行を残す
+      choices: [4, 5, 9]
+      answer: 5
+      explain: |
+        OR は「どちらかを満たせば残る」。スキンケア 4 品 + スキンケア以外で 3,000 円超のアイシャドウ（3,200 円）= 5 行。
+        AND と OR の取り違えは、業務要件とのズレとして最も見つけやすい部類です。
+    - type: quiz
+      prompt: "`WHERE list_price <> 3800` は何を残す？"
+      choices:
+        - 定価が 3,800 円の行
+        - 定価が 3,800 円ではない行
+        - 定価が 3,800 円以上の行
+      answer: 1
+      explain: "`<>` は「等しくない」。`!=` と書かれることもあります。"
+
+- id: L1-04
+  level: L1
+  title: WHERE の道具 — IN / LIKE / BETWEEN
+  minutes: 5
+  intro: |
+    条件を短く書くための 3 つの道具です。
+
+    | 書き方 | 意味 | Alteryx |
+    |---|---|---|
+    | `brand IN ('ハナ', 'ソラ')` | ハナ または ソラ | フィルターの IN |
+    | `product_name LIKE 'ルミナ%'` | 「ルミナ」で始まる | StartsWith |
+    | `list_price BETWEEN 2000 AND 3000` | 2,000 以上 3,000 以下（**両端を含む**） | >= AND <= |
+
+    `%` は「任意の文字列」。`'%リップ%'` なら「リップを含む」になります。
+  datasets: [products]
+  query:
+    - clause: SELECT
+      sql: "SELECT product_name, brand, list_price"
+      ja: 商品名・ブランド・定価を表示する
+    - clause: FROM
+      sql: "FROM `dojo.products`"
+      ja: 商品テーブルを使う
+    - clause: WHERE
+      sql: "WHERE brand IN ('ハナ', 'ソラ') AND list_price BETWEEN 2000 AND 3000"
+      ja: ブランドがハナかソラで、かつ定価が 2,000〜3,000 円の行だけ残す
+  tasks:
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行になる？
+      choices: [2, 3, 6]
+      answer: 3
+      explain: |
+        ハナ・ソラは 6 品。そのうち 2,000〜3,000 円はリップルージュ 2 品（2,500 / 2,800）と日焼け止め（2,200）の 3 行。
+        アイシャドウ（3,200）とボディミルク（1,800）は範囲外です。
+    - type: predict
+      ask: rowCount
+      prompt: LIKE で「ルミナ」で始まる商品を残すと何行？
+      query:
+        - clause: SELECT
+          sql: "SELECT product_name, brand"
+          ja: 商品名とブランドを表示する
+        - clause: FROM
+          sql: "FROM `dojo.products`"
+          ja: 商品テーブルを使う
+        - clause: WHERE
+          sql: "WHERE product_name LIKE 'ルミナ%'"
+          ja: 商品名が「ルミナ」で始まる行だけ残す
+      choices: [3, 4, 10]
+      answer: 4
+      explain: 化粧水・乳液・美容液・クリームの 4 品。未発売のクリームも名前は「ルミナ」で始まるので含まれます。
+    - type: quiz
+      prompt: "`BETWEEN 2000 AND 3000` に 3,000 円ちょうどの商品は含まれる？"
+      choices:
+        - 含まれる
+        - 含まれない
+      answer: 0
+      explain: BETWEEN は両端を含みます。「未満」で絞りたい要件なら `< 3000` でないとズレます。
+
+- id: L1-05
+  level: L1
+  title: NULL — 「値がない」の扱い
+  minutes: 6
+  intro: |
+    **NULL** は「値がない」という印です。0 でも空文字でもありません。Alteryx の `Null()` と同じです。
+
+    NULL の厄介なところは、**比較しても真にも偽にもならない**こと。
+    `region = NULL` と書いても 1 行も残りません。NULL かどうかは **IS NULL** / **IS NOT NULL** で判定します。
+
+    もう 1 つの罠: `region <> '関東'` と書くと、**NULL の行も落ちます**。
+    「関東以外」のつもりが、地域未設定の得意先を黙って除外している——実務で本当に起きるズレです。
+  datasets: [customers]
+  query:
+    - clause: SELECT
+      sql: "SELECT customer_name, region"
+      ja: 得意先名と地域を表示する
+    - clause: FROM
+      sql: "FROM `dojo.customers`"
+      ja: 得意先テーブルを使う
+    - clause: WHERE
+      sql: "WHERE region = NULL"
+      ja: 地域が NULL と「等しい」行を残す（→ 1 行も残らない）
+  tasks:
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行になる？
+      choices: [0, 1, 8]
+      answer: 0
+      explain: "`= NULL` は常に「不明」になり、WHERE は不明な行を残しません。結果は 0 行。エラーにもならないのが怖いところです。"
+    - type: predict
+      ask: rowCount
+      prompt: IS NULL に直すと何行？
+      query:
+        - clause: SELECT
+          sql: "SELECT customer_name, region"
+          ja: 得意先名と地域を表示する
+        - clause: FROM
+          sql: "FROM `dojo.customers`"
+          ja: 得意先テーブルを使う
+        - clause: WHERE
+          sql: "WHERE region IS NULL"
+          ja: 地域が NULL の行だけ残す
+      choices: [0, 1, 8]
+      answer: 1
+      explain: 地域未設定はビューティ通販（EC）の 1 件だけ。
+    - type: predict
+      ask: rowCount
+      prompt: "「関東以外」のつもりで `region <> '関東'` と書いたら何行？"
+      query:
+        - clause: SELECT
+          sql: "SELECT customer_name, region"
+          ja: 得意先名と地域を表示する
+        - clause: FROM
+          sql: "FROM `dojo.customers`"
+          ja: 得意先テーブルを使う
+        - clause: WHERE
+          sql: "WHERE region <> '関東'"
+          ja: 地域が関東でない行を残す（NULL は残らない）
+      choices: [6, 5, 8]
+      answer: 5
+      explain: |
+        8 件のうち関東は 2 件。「関東以外」なら 6 件のはずですが、結果は 5 件。
+        地域が NULL のビューティ通販は `<> '関東'` の判定が「不明」になり、落ちます。
+        要件が「関東以外の全得意先」なら、`region <> '関東' OR region IS NULL` でないとズレます。
+
+- id: L1-06
+  level: L1
+  title: ORDER BY — 並べる
+  minutes: 4
+  intro: |
+    **ORDER BY** は結果を並べ替えます。Alteryx の**ソート**です。
+
+    - `ORDER BY opened_date` … 昇順（古い → 新しい）。**ASC** は省略できる
+    - `ORDER BY opened_date DESC` … 降順（新しい → 古い）
+    - `ORDER BY prefecture, opened_date DESC` … 都道府県で並べ、同じ都道府県の中は開店日の新しい順
+
+    ORDER BY は実行順の**ほぼ最後**。WHERE で絞り、SELECT で列を選んだ後に並べます。
+    だから ORDER BY には SELECT で付けた別名（AS の右側）も使えます。
+  datasets: [stores]
+  query:
+    - clause: SELECT
+      sql: "SELECT store_name, prefecture, opened_date"
+      ja: 店名・都道府県・開店日を表示する
+    - clause: FROM
+      sql: "FROM `dojo.stores`"
+      ja: 店舗テーブルを使う
+    - clause: WHERE
+      sql: "WHERE prefecture IN ('北海道', '東京都')"
+      ja: 北海道か東京都の店だけ残す
+    - clause: ORDER BY
+      sql: "ORDER BY opened_date"
+      ja: 開店日の古い順に並べる
+  tasks:
+    - type: predict
+      ask: cell
+      row: 0
+      col: store_name
+      prompt: 1 行目に来る店はどれ？
+      choices: ["銀座本店", "札幌本店", "オンライン"]
+      answer: "銀座本店"
+      explain: 昇順なので一番古い店が先頭。銀座本店は 1998 年開店です。
+    - type: predict
+      ask: cell
+      row: 0
+      col: store_name
+      prompt: DESC を付けたら 1 行目はどれ？
+      query:
+        - clause: SELECT
+          sql: "SELECT store_name, prefecture, opened_date"
+          ja: 店名・都道府県・開店日を表示する
+        - clause: FROM
+          sql: "FROM `dojo.stores`"
+          ja: 店舗テーブルを使う
+        - clause: WHERE
+          sql: "WHERE prefecture IN ('北海道', '東京都')"
+          ja: 北海道か東京都の店だけ残す
+        - clause: ORDER BY
+          sql: "ORDER BY opened_date DESC"
+          ja: 開店日の新しい順に並べる
+      choices: ["銀座本店", "札幌本店", "オンライン"]
+      answer: "オンライン"
+      explain: 降順なので一番新しい店が先頭。オンライン店は 2020 年開設です。
+    - type: quiz
+      prompt: ORDER BY に ASC も DESC も書かれていないときは？
+      choices:
+        - 昇順（ASC）になる
+        - 降順（DESC）になる
+        - エラーになる
+      answer: 0
+      explain: 既定は昇順。エンジニアのクエリで DESC が無いのに「上位 N 件」を出しているなら、下位 N 件になっている可能性があります。
+
+- id: L1-07
+  level: L1
+  title: LIMIT と DISTINCT — 行数を絞る・重複をまとめる
+  minutes: 5
+  intro: |
+    - **LIMIT N** … 先頭 N 行だけ出す。Alteryx の**サンプル**。実行順の一番最後
+    - **DISTINCT** … 表示する列の組み合わせが同じ行を 1 行にまとめる。Alteryx の**ユニーク**
+
+    LIMIT は ORDER BY と組で使われます。`ORDER BY 売上 DESC LIMIT 3` = 売上トップ 3。
+    ORDER BY なしの LIMIT は「**どの 3 行かは保証されない**」ので、要件が「上位 3 件」ならズレです。
+
+    DISTINCT には注意点があります。**なぜ重複しているのか**を見ずにまとめると、
+    本当は別物（ID 違いの同名商品など）を 1 つに潰してしまいます。
+  datasets: [products]
+  query:
+    - clause: SELECT
+      sql: "SELECT DISTINCT brand"
+      ja: ブランドの重複をまとめて表示する
+    - clause: FROM
+      sql: "FROM `dojo.products`"
+      ja: 商品テーブルを使う
+  tasks:
+    - type: vocab
+      text: 10 行のブランド列を DISTINCT でまとめると、同じ値の行が 1 行に束ねられます。
+    - type: predict
+      ask: rowCount
+      prompt: brand ではなく product_name を DISTINCT したら何行？
+      query:
+        - clause: SELECT
+          sql: "SELECT DISTINCT product_name"
+          ja: 商品名の重複をまとめて表示する
+        - clause: FROM
+          sql: "FROM `dojo.products`"
+          ja: 商品テーブルを使う
+      choices: [10, 9, 3]
+      answer: 9
+      explain: |
+        商品は 10 品ですが、「ハナ リップルージュ」は旧品と新品で ID が違うだけの同名。DISTINCT で 1 行に潰れて 9 行。
+        「商品数を数えたい」要件で `COUNT(DISTINCT product_name)` と書かれていたら、1 品少なく数えています。
+    - type: predict
+      ask: cell
+      row: 2
+      col: product_name
+      prompt: 定価トップ 3 の 3 行目はどれ？
+      query:
+        - clause: SELECT
+          sql: "SELECT product_name, list_price"
+          ja: 商品名と定価を表示する
+        - clause: FROM
+          sql: "FROM `dojo.products`"
+          ja: 商品テーブルを使う
+        - clause: ORDER BY
+          sql: "ORDER BY list_price DESC"
+          ja: 定価の高い順に並べる
+        - clause: LIMIT
+          sql: "LIMIT 3"
+          ja: 先頭の 3 行だけ出す
+      choices: ["ルミナ 乳液", "ルミナ 化粧水", "ルミナ 美容液"]
+      answer: "ルミナ 乳液"
+      explain: 12,000（クリーム）→ 8,800（美容液）→ 4,200（乳液）。ORDER BY が先、LIMIT が後、という実行順が効いています。
+
+- id: L1-08
+  level: L1
+  title: 昇級試験 — Lv1 のまとめ
+  minutes: 6
+  intro: |
+    Lv1 の 6 語を混ぜた 5 問です。クエリは FROM から読んでください。
+    答える前に「何の表から、どの行を残し、どの列を見せ、どう並べ、何行出すか」を頭の中で言ってみましょう。
+  datasets: [customers, stores, products]
+  tasks:
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行？
+      query:
+        - clause: SELECT
+          sql: "SELECT customer_name"
+          ja: 得意先名を表示する
+        - clause: FROM
+          sql: "FROM `dojo.customers`"
+          ja: 得意先テーブルを使う
+        - clause: WHERE
+          sql: "WHERE is_active = FALSE"
+          ja: 取引停止（is_active が偽）の行だけ残す
+      choices: [1, 7, 8]
+      answer: 1
+      explain: 取引停止はひまわり薬局だけ。
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行？
+      query:
+        - clause: SELECT
+          sql: "SELECT store_name, opened_date"
+          ja: 店名と開店日を表示する
+        - clause: FROM
+          sql: "FROM `dojo.stores`"
+          ja: 店舗テーブルを使う
+        - clause: WHERE
+          sql: "WHERE opened_date >= '2020-01-01'"
+          ja: 2020 年 1 月 1 日以降に開店した店だけ残す
+      choices: [1, 2, 3]
+      answer: 2
+      explain: オンライン（2020-06）と大宮店（2026-05）の 2 店。`>=` なので 2020-01-01 当日も含みます。
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行？
+      query:
+        - clause: SELECT
+          sql: "SELECT DISTINCT category"
+          ja: カテゴリの重複をまとめて表示する
+        - clause: FROM
+          sql: "FROM `dojo.products`"
+          ja: 商品テーブルを使う
+        - clause: WHERE
+          sql: "WHERE brand <> 'ルミナ'"
+          ja: ブランドがルミナでない行だけ残す
+      choices: [2, 3, 6]
+      answer: 2
+      explain: ルミナ以外はハナ（メイク）とソラ（ボディ）。カテゴリは 2 種類。WHERE が先、DISTINCT が後です。
+    - type: predict
+      ask: rowCount
+      prompt: この結果は何行？
+      query:
+        - clause: SELECT
+          sql: "SELECT customer_name, channel, region"
+          ja: 得意先名・チャネル・地域を表示する
+        - clause: FROM
+          sql: "FROM `dojo.customers`"
+          ja: 得意先テーブルを使う
+        - clause: WHERE
+          sql: "WHERE region IS NULL OR channel = 'EC'"
+          ja: 地域が NULL か、チャネルが EC の行を残す
+      choices: [1, 2, 8]
+      answer: 1
+      explain: 地域 NULL も EC もビューティ通販の 1 件。OR で両方に当たっても、行は 1 行のままです。
+    - type: predict
+      ask: cell
+      row: 0
+      col: product_name
+      prompt: 1 行目に来る商品はどれ？
+      query:
+        - clause: SELECT
+          sql: "SELECT product_name, list_price"
+          ja: 商品名と定価を表示する
+        - clause: FROM
+          sql: "FROM `dojo.products`"
+          ja: 商品テーブルを使う
+        - clause: WHERE
+          sql: "WHERE list_price BETWEEN 3000 AND 4000"
+          ja: 定価が 3,000〜4,000 円の行だけ残す
+        - clause: ORDER BY
+          sql: "ORDER BY list_price"
+          ja: 定価の安い順に並べる
+      choices: ["ハナ アイシャドウ", "ルミナ 化粧水", "ルミナ 乳液"]
+      answer: "ハナ アイシャドウ"
+      explain: 範囲内はアイシャドウ（3,200）と化粧水（3,800）。昇順なので安いアイシャドウが先頭。乳液（4,200）は範囲外です。

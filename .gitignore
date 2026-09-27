@@ -1,0 +1,20 @@
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+.playwright-mcp/
+__pycache__/
+.venv/
+.env
+
+# 個人メモリと作業ログは GitHub に上げない（正の所在は project_root/memory/）
+memory/
+claude_logs/
+STATUS.md
+STATUS_ARCHIVE.md
+CLAUDE.md
+.claude/
+
+# 作業中の下書き
+_*.json
+_*.md

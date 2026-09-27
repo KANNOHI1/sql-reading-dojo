@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL Reading Dojo</title>
+<meta name="description" content="BigQuery SQL を「読む」ための道場。予測して、動きで答え合わせして、要件とのズレに気づく。">
+<style>
+:root{
+  --bg:#08090a; --panel:#0f1011; --surface:#191a1b; --surface2:#28282c;
+  --text:#f7f8f8; --text2:#d0d6e0; --text3:#8a8f98; --text4:#62666d;
+  --brand:#5e6ad2; --accent:#7170ff; --accent2:#828fff;
+  --green:#27a644; --emerald:#10b981; --red:#e5484d; --amber:#e0b26a;
+  --line:rgba(255,255,255,.06); --line2:rgba(255,255,255,.1); --border:#23252a;
+  --r1:6px; --r2:8px; --r3:12px;
+  --font:"Inter","Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  --mono:"Cascadia Mono","SFMono-Regular",Consolas,"BIZ UDGothic",monospace;
+  --kw:#9b9dff; --str:#7fd1a8; --num:#e0b26a; --cmt:#62666d; --ident:#d0d6e0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--accent2);text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+code{font-family:var(--mono);font-size:.92em;background:var(--surface);padding:1px 5px;border-radius:4px;color:var(--text2)}
+strong{color:var(--text);font-weight:600}
+.hdr{position:sticky;top:0;z-index:10;background:rgba(8,9,10,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hdr-in{max-width:1200px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:18px}
+.logo{font-weight:600;letter-spacing:-.01em;color:var(--text)}
+.logo span{color:var(--accent2)}
+.hdr .sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;color:var(--text2);background:var(--surface);border:1px solid var(--line)}
+.pill b{color:var(--text)}
+main{max-width:1200px;margin:0 auto;padding:28px 24px 80px}
+.crumbs{font-size:13px;color:var(--text3);display:flex;gap:8px;margin-bottom:14px}
+.crumbs a{color:var(--text3)}.crumbs a:hover{color:var(--text)}
+h1{font-size:26px;font-weight:600;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:18px;font-weight:600;letter-spacing:-.01em;margin:26px 0 12px}
+.sub{color:var(--text3);margin:0 0 22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r3);padding:18px 20px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:1024px){.grid{grid-template-columns:repeat(2,1fr)}}
+.lvl{display:block;color:inherit;transition:border-color .15s,transform .15s}
+.lvl:hover{border-color:var(--line2);transform:translateY(-1px)}
+.lvl.locked{opacity:.5}
+.lvl .top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.badge{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--text2)}
+.badge.on{background:rgba(94,106,210,.25);color:var(--accent2)}
+.badge.ok{background:rgba(16,185,129,.18);color:var(--emerald)}
+.lvl h3{margin:0;font-size:15.5px;font-weight:600}
+.lvl p{margin:0 0 12px;color:var(--text3);font-size:13px}
+.bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .4s}
+.bar.ok i{background:var(--emerald)}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-top:6px}
+.hero{display:flex;align-items:center;gap:24px;margin-bottom:26px}
+.hero .rank{font-size:12px;color:var(--text3)}
+.hero .rank b{display:block;font-size:30px;color:var(--text);letter-spacing:-.02em;line-height:1.2}
+.lessons{display:flex;flex-direction:column;gap:8px}
+.ls{display:flex;align-items:center;gap:14px;padding:12px 16px;color:inherit}
+.ls .n{width:36px;color:var(--text4);font-family:var(--mono);font-size:13px}
+.ls .t{flex:1}
+.ls .t small{display:block;color:var(--text3);font-size:12.5px}
+.ls .st{font-size:12px;color:var(--text3)}
+.ls .st.ok{color:var(--emerald)}
+/* intro markdown */
+.md p{margin:0 0 12px;color:var(--text2)}
+.md ul{margin:0 0 12px;padding-left:20px;color:var(--text2)}
+.md li{margin:2px 0}
+.md table{border-collapse:collapse;margin:6px 0 14px;font-size:14px}
+.md th,.md td{border:1px solid var(--border);padding:6px 12px;text-align:left}
+.md th{color:var(--text3);font-weight:500;background:var(--surface)}
+/* lesson layout */
+.dots{display:flex;gap:6px;margin:18px 0 14px}
+.dots i{width:22px;height:4px;border-radius:2px;background:var(--surface2)}
+.dots i.done{background:var(--emerald)}.dots i.cur{background:var(--accent)}
+.task{margin-top:6px}
+.task .prompt{font-size:17px;font-weight:600;margin:0 0 14px;letter-spacing:-.01em}
+.two{display:grid;grid-template-columns:minmax(360px,5fr) minmax(420px,7fr);gap:16px;align-items:start}
+@media (max-width:1024px){.two{grid-template-columns:1fr}}
+.qpanel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r3);padding:8px 0;font-family:var(--mono);font-size:14px;line-height:1.7}
+.qline{display:flex;gap:12px;padding:3px 16px;border-left:2px solid transparent;white-space:pre-wrap;word-break:break-word}
+.qline .ln{color:var(--text4);width:16px;text-align:right;user-select:none;flex:none}
+.qline.active{background:rgba(112,112,255,.12);border-left-color:var(--accent)}
+.qline.dim{opacity:.4}
+.qline.clickable{cursor:pointer}
+.qline.clickable:hover{background:rgba(255,255,255,.04)}
+.qline.read{border-left-color:var(--emerald)}
+.kw{color:var(--kw);font-weight:600}.str{color:var(--str)}.num{color:var(--num)}.cmt{color:var(--cmt)}.op{color:var(--text3)}
+[data-term]{border-bottom:1px dotted rgba(255,255,255,.25);cursor:help}
+.tip{position:fixed;z-index:50;max-width:320px;background:var(--surface);border:1px solid var(--line2);border-radius:var(--r2);padding:10px 12px;font-size:13px;color:var(--text2);box-shadow:0 8px 30px rgba(0,0,0,.5);pointer-events:none}
+.tip b{color:var(--text);font-family:var(--mono)}
+.tip .ax{color:var(--emerald);font-size:12px;margin-top:4px}
+.tip .nt{color:var(--text3);font-size:12px;margin-top:4px}
+.trans{margin-top:10px;padding:12px 14px;background:var(--surface);border-radius:var(--r2);color:var(--text2);min-height:44px;font-size:14px}
+.trans b{color:var(--accent2);font-family:var(--mono);font-weight:600;margin-right:8px}
+/* stage */
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:var(--r3);overflow:hidden}
+.phases{display:flex;align-items:center;gap:4px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ph{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12.5px;color:var(--text3);background:transparent;border:1px solid transparent}
+.ph.done{color:var(--text2)}
+.ph.cur{color:var(--text);background:rgba(112,112,255,.16);border-color:rgba(112,112,255,.35)}
+.ph .k{font-family:var(--mono);font-weight:600}
+.ph .ar{color:var(--text4);padding:0 2px}
+.ctl{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r2);background:var(--surface);border:1px solid var(--line);color:var(--text2);font-size:13.5px;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--surface2);border-color:var(--line2);color:var(--text)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.pri{background:var(--brand);border-color:transparent;color:#fff}
+.btn.pri:hover{background:var(--accent2)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.ctl .info{margin-left:auto;font-size:12.5px;color:var(--text3)}
+.ctl .info b{color:var(--text)}
+.tblwrap{position:relative;overflow:auto;max-height:440px;padding:6px 10px 12px}
+table.dt{border-collapse:separate;border-spacing:0;font-size:13.5px;font-family:var(--mono);width:100%}
+.dt th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:500;color:var(--text3);padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.dt td{padding:5px 10px;border-bottom:1px solid var(--line);white-space:nowrap;color:var(--text2)}
+.dt tr:last-child td{border-bottom:0}
+.dt td.null{color:var(--text4);font-style:italic}
+.dt td.n{text-align:right}
+.dt tr.hl td{background:rgba(112,112,255,.12)}
+.ghost{position:absolute;pointer-events:none;color:var(--red);opacity:.9;font-family:var(--mono);font-size:13.5px;white-space:nowrap;display:flex}
+.ghost span{padding:5px 10px}
+.stage .cnt{padding:6px 14px;font-size:12.5px;color:var(--text3);border-top:1px solid var(--line);display:flex;gap:10px}
+.stage .cnt b{color:var(--text)}
+.stage .cnt .d{color:var(--red)}.stage .cnt .g{color:var(--emerald)}
+/* choices */
+.choices{display:flex;flex-direction:column;gap:8px;margin:8px 0 14px}
+.ch{display:flex;align-items:center;gap:12px;text-align:left;padding:11px 14px;border-radius:var(--r2);background:var(--panel);border:1px solid var(--line);color:var(--text2);font-size:15px;transition:border-color .12s,background .12s}
+.ch:hover:not(:disabled){border-color:var(--line2);background:var(--surface)}
+.ch .k{width:22px;height:22px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;font-size:12px;color:var(--text3);flex:none}
+.ch.ok{border-color:rgba(16,185,129,.6);background:rgba(16,185,129,.08);color:var(--text)}
+.ch.ng{border-color:rgba(229,72,77,.6);background:rgba(229,72,77,.08)}
+.ch:disabled{cursor:default}
+.fb{padding:14px 16px;border-radius:var(--r2);border:1px solid var(--line);background:var(--panel);margin:14px 0}
+.fb .h{font-weight:600;margin-bottom:6px}
+.fb.ok .h{color:var(--emerald)}.fb.ng .h{color:var(--red)}
+.fb .md p:last-child{margin-bottom:0}
+.note{color:var(--text2);margin:0 0 14px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+.nav .sp{flex:1}
+.disc{display:inline-block;margin-right:6px}
+.done-card{text-align:center;padding:40px 20px}
+.done-card .big{font-size:40px;font-weight:600;letter-spacing:-.03em;color:var(--text)}
+.done-card p{color:var(--text3)}
+.done-card .row{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.sec{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px}
+.warn{background:rgba(224,178,106,.12);border:1px solid rgba(224,178,106,.35);color:var(--amber);padding:8px 14px;font-size:13px;text-align:center}
+.inputs{margin-top:12px}
+.inputs summary{cursor:pointer;color:var(--text3);font-size:13px;padding:6px 0}
+.inputs .stage{margin-top:6px}
+footer{max-width:1200px;margin:0 auto;padding:0 24px 30px;color:var(--text4);font-size:12px;display:flex;gap:16px}
+@media (prefers-reduced-motion:reduce){.lvl,.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="tip" class="tip" hidden></div>
+<script src="lessons.js?v=96cd18eb33fe"></script>
+<script>
+'use strict';
+/* ============ util ============ */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const D = window.LESSONS;
+if (!D) { document.body.innerHTML = '<main><div class="card">lessons.js が読み込めません。index.html と同じ場所に lessons.js があるか確認してください。</div></main>'; throw new Error('no lessons'); }
+const LEVELS = D.levels, LESSONS = D.lessons, GLOSS = D.glossary;
+const byLevel = id => LESSONS.filter(l => l.level === id);
+const lessonById = id => LESSONS.find(l => l.id === id);
+
+/* markdown-lite: 段落・**強調**・`code`・- 箇条書き・| 表 | */
+function inline(s) {
+  return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+function md(src) {
+  const out = []; const lines = (src || '').split('\n'); let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (!l.trim()) { i++; continue; }
+    if (l.trim().startsWith('|')) {
+      const rows = []; while (i < lines.length && lines[i].trim().startsWith('|')) { rows.push(lines[i].trim()); i++; }
+      const cells = r => r.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const body = rows.filter(r => !/^[\s|:-]+$/.test(r));  // 区切り行 |---|---| を除く
+      const [head, ...rest] = body;
+      out.push('<table><thead><tr>' + cells(head).map(c => `<th>${inline(c)}</th>`).join('') + '</tr></thead><tbody>' +
+        rest.map(r => '<tr>' + cells(r).map(c => `<td>${inline(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>');
+      continue;
+    }
+    if (/^\s*-\s/.test(l)) {
+      const items = []; while (i < lines.length && /^\s*-\s/.test(lines[i])) { items.push(lines[i].replace(/^\s*-\s/, '')); i++; }
+      out.push('<ul>' + items.map(x => `<li>${inline(x)}</li>`).join('') + '</ul>'); continue;
+    }
+    const para = []; while (i < lines.length && lines[i].trim() && !lines[i].trim().startsWith('|') && !/^\s*-\s/.test(lines[i])) { para.push(lines[i]); i++; }
+    out.push(`<p>${inline(para.join(' '))}</p>`);
+  }
+  return `<div class="md">${out.join('')}</div>`;
+}
+
+/* ============ store ============ */
+const KEY = 'sqlread.v1';
+let memOnly = false;
+const store = (() => {
+  let s = { results: {}, visited: {} };
+  try { const raw = localStorage.getItem(KEY); if (raw) s = Object.assign(s, JSON.parse(raw)); }
+  catch (e) { memOnly = true; }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { memOnly = true; } };
+  return {
+    get: () => s,
+    record(taskId, ok) { if (!s.results[taskId]) { s.results[taskId] = { ok, n: 1, t: Date.now() }; } else { s.results[taskId].n++; s.results[taskId].last = ok; } save(); },
+    result: id => s.results[id],
+    visit(lessonId) { s.visited[lessonId] = true; save(); },
+    resetLesson(lesson) { lesson.tasks.forEach(t => delete s.results[t.id]); save(); },
+  };
+})();
+function levelStats(levelId) {
+  const tasks = byLevel(levelId).flatMap(l => l.tasks).filter(t => t.scored);
+  const done = tasks.filter(t => store.result(t.id));
+  const ok = tasks.filter(t => store.result(t.id)?.ok);
+  return { total: tasks.length, done: done.length, ok: ok.length, mastery: tasks.length ? ok.length / tasks.length : 0 };
+}
+function isUnlocked(levelIdx) {
+  if (levelIdx === 0) return true;
+  const prev = LEVELS[levelIdx - 1];
+  if (!byLevel(prev.id).length) return false;   // 前レベルが未作成
+  return levelStats(prev.id).mastery >= 0.8;
+}
+function lessonStatus(lesson) {
+  const scored = lesson.tasks.filter(t => t.scored);
+  const done = scored.filter(t => store.result(t.id)).length;
+  if (scored.length && done === scored.length) return 'done';
+  if (done || store.get().visited[lesson.id]) return 'partial';
+  return 'todo';
+}
+function currentRank() {
+  let r = LEVELS[0];
+  LEVELS.forEach((lv, i) => { if (isUnlocked(i) && byLevel(lv.id).length) r = lv; });
+  return r;
+}
+
+/* ============ SQL tokenizer + glossary ============ */
+const TERMS = Object.keys(GLOSS).sort((a, b) => b.length - a.length);
+const KW = ['SELECT','FROM','WHERE','GROUP BY','HAVING','ORDER BY','LIMIT','DISTINCT','AS','AND','OR','NOT','IN','LIKE','BETWEEN','IS','NULL','ASC','DESC','JOIN','LEFT','INNER','FULL','ON','CASE','WHEN','THEN','ELSE','END','WITH','OVER','PARTITION BY','QUALIFY','TRUE','FALSE','EXISTS','UNION ALL','UNION','EXCEPT'];
+const termRe = new RegExp('^(' + [...new Set([...TERMS, ...KW])].sort((a, b) => b.length - a.length).map(t => t.replace(/ /g, '\\s+')).join('|') + ')(?![\\w])', 'i');
+function highlight(sql) {
+  let out = '', s = sql;
+  while (s.length) {
+    let m;
+    if ((m = s.match(/^--.*$/m)) && s.startsWith('--')) { out += `<span class="cmt">${esc(m[0])}</span>`; s = s.slice(m[0].length); continue; }
+    if ((m = s.match(/^'([^']*)'/))) { out += `<span class="str">${esc(m[0])}</span>`; s = s.slice(m[0].length); continue; }
+    if ((m = s.match(/^`[^`]*`/))) { out += `<span class="ident">${esc(m[0])}</span>`; s = s.slice(m[0].length); continue; }
+    if ((m = s.match(/^\d+(\.\d+)?/))) { out += `<span class="num">${m[0]}</span>`; s = s.slice(m[0].length); continue; }
+    if ((m = s.match(termRe))) {
+      const norm = m[0].toUpperCase().replace(/\s+/g, ' ');
+      const g = GLOSS[norm]; const cls = KW.includes(norm) ? 'kw' : 'fn';
+      out += g ? `<span class="${cls}" data-term="${esc(norm)}" tabindex="0">${esc(m[0])}</span>` : `<span class="${cls}">${esc(m[0])}</span>`;
+      s = s.slice(m[0].length); continue;
+    }
+    if ((m = s.match(/^[A-Za-z_][\w.]*/))) {
+      const up = m[0].toUpperCase(); const g = GLOSS[up];
+      out += g ? `<span class="fn" data-term="${esc(up)}" tabindex="0">${esc(m[0])}</span>` : esc(m[0]);
+      s = s.slice(m[0].length); continue;
+    }
+    if ((m = s.match(/^(<>|!=|>=|<=|[=<>+\-*/(),])/))) { out += `<span class="op">${esc(m[0])}</span>`; s = s.slice(m[0].length); continue; }
+    out += esc(s[0]); s = s.slice(1);
+  }
+  return out;
+}
+const tip = $('#tip');
+function showTip(el) {
+  const g = GLOSS[el.dataset.term]; if (!g) return;
+  tip.innerHTML = `<b>${esc(el.dataset.term)}</b><div>${esc(g.ja)}</div>` +
+    (g.alteryx ? `<div class="ax">Alteryx: ${esc(g.alteryx)}</div>` : '') + (g.note ? `<div class="nt">${esc(g.note)}</div>` : '');
+  tip.hidden = false;
+  const r = el.getBoundingClientRect(); const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = r.left, y = r.bottom + 8;
+  if (x + tw > innerWidth - 12) x = innerWidth - tw - 12;
+  if (y + th > innerHeight - 12) y = r.top - th - 8;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+document.addEventListener('mouseover', e => { const t = e.target.closest('[data-term]'); if (t) showTip(t); });
+document.addEventListener('mouseout', e => { if (e.target.closest('[data-term]')) tip.hidden = true; });
+document.addEventListener('focusin', e => { const t = e.target.closest('[data-term]'); if (t) showTip(t); });
+document.addEventListener('focusout', e => { if (e.target.closest('[data-term]')) tip.hidden = true; });
+
+function queryPanel(lines, opts = {}) {
+  return `<div class="qpanel" data-q>${lines.map((l, i) =>
+    `<div class="qline ${opts.clickable ? 'clickable' : ''}" data-line="${l.id}" ${opts.clickable ? 'role="button" tabindex="0"' : ''}><span class="ln">${i + 1}</span><span>${highlight(l.sql)}</span></div>`).join('')}</div>`;
+}
+
+/* ============ stage (table + FLIP animation) ============ */
+class Stage {
+  constructor(el, steps, opts = {}) {
+    this.el = el; this.steps = steps; this.idx = 0; this.playing = false; this.busy = false; this.onStep = opts.onStep || (() => {});
+    this.el.innerHTML = `<div class="phases"></div><div class="ctl">
+      <button class="btn sm" data-a="first" title="最初へ">⏮</button>
+      <button class="btn sm" data-a="prev" title="前へ (←)">◀</button>
+      <button class="btn sm pri" data-a="play" title="再生 (スペース)">▶ 再生</button>
+      <button class="btn sm" data-a="next" title="次へ (→)">▶</button>
+      <span class="info"></span></div>
+      <div class="tblwrap"></div><div class="cnt"></div>`;
+    this.wrap = $('.tblwrap', el);
+    this.el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) this.act(b.dataset.a); });
+    this.el.tabIndex = 0;
+    this.el.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); this.act('next'); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); this.act('prev'); }
+      if (e.key === ' ') { e.preventDefault(); this.act('play'); }
+    });
+    this.render(0, false);
+  }
+  act(a) {
+    if (a === 'play') { this.playing ? this.stop() : this.play(); return; }
+    this.stop();
+    if (a === 'next' && this.idx < this.steps.length - 1) this.go(this.idx + 1);
+    if (a === 'prev' && this.idx > 0) this.go(this.idx - 1);
+    if (a === 'first') this.render(0, false);
+  }
+  async play() {
+    if (this.idx >= this.steps.length - 1) this.render(0, false);
+    this.playing = true; this.updateCtl();
+    while (this.playing && this.idx < this.steps.length - 1) { await sleep(700); if (!this.playing) break; await this.go(this.idx + 1); await sleep(500); }
+    this.playing = false; this.updateCtl();
+  }
+  stop() { this.playing = false; this.updateCtl(); }
+  updateCtl() {
+    const b = $('[data-a=play]', this.el); b.textContent = this.playing ? '❚❚ 停止' : '▶ 再生';
+    $('[data-a=prev]', this.el).disabled = this.idx === 0; $('[data-a=next]', this.el).disabled = this.idx >= this.steps.length - 1;
+  }
+  tableHTML(step, prev) {
+    const numCols = step.cols.map((_, ci) => step.rows.every(r => r[ci] === null || typeof r[ci] === 'number'));
+    return `<table class="dt"><thead><tr>${step.cols.map(c => `<th data-col="${esc(c)}">${esc(c)}</th>`).join('')}</tr></thead><tbody>` +
+      step.rows.map((r, ri) => `<tr data-rid="${esc(step.rid[ri])}">${r.map((v, ci) => v === null ? '<td class="null">NULL</td>' : `<td class="${numCols[ci] ? 'n' : ''}">${esc(typeof v === 'number' ? v.toLocaleString('ja-JP') : v)}</td>`).join('')}</tr>`).join('') +
+      `</tbody></table>`;
+  }
+  render(idx, _anim) {
+    this.idx = idx; const step = this.steps[idx];
+    this.wrap.innerHTML = this.tableHTML(step);
+    this.paint();
+  }
+  paint() {
+    const step = this.steps[this.idx];
+    $('.phases', this.el).innerHTML = this.steps.map((s, i) =>
+      `<span class="ph ${i < this.idx ? 'done' : i === this.idx ? 'cur' : ''}"><span class="k">${esc(s.phase)}</span><span>${esc(s.label)}</span></span>` + (i < this.steps.length - 1 ? '<span class="ar">→</span>' : '')).join('');
+    $('.info', this.el).innerHTML = `<b>${this.idx + 1}</b> / ${this.steps.length}　${esc(step.tool || '')}`;
+    const prev = this.steps[this.idx - 1];
+    let cnt = `<span><b>${step.rows.length}</b> 行 × <b>${step.cols.length}</b> 列</span>`;
+    if (prev) {
+      const dr = step.rows.length - prev.rows.length, dc = step.cols.length - prev.cols.length;
+      if (dr) cnt += `<span class="${dr < 0 ? 'd' : 'g'}">${dr > 0 ? '+' : ''}${dr} 行</span>`;
+      if (dc) cnt += `<span class="${dc < 0 ? 'd' : 'g'}">${dc > 0 ? '+' : ''}${dc} 列</span>`;
+    }
+    $('.cnt', this.el).innerHTML = cnt;
+    this.updateCtl(); this.onStep(this.idx, step);
+  }
+  async go(idx) {
+    if (this.busy) return; this.busy = true;
+    const from = this.steps[this.idx], to = this.steps[idx], forward = idx > this.idx;
+    if (REDUCED || !forward) { this.render(idx); this.busy = false; return; }
+    const wrapRect = this.wrap.getBoundingClientRect();
+    const oldRows = new Map(); this.wrap.querySelectorAll('tbody tr').forEach(tr => oldRows.set(tr.dataset.rid, tr.getBoundingClientRect()));
+    const oldRowEls = new Map(); this.wrap.querySelectorAll('tbody tr').forEach(tr => oldRowEls.set(tr.dataset.rid, tr));
+    // 1) 列が消える: 先に該当セルをフェード
+    const removedCols = from.cols.map((c, i) => [c, i]).filter(([c]) => !to.cols.includes(c)).map(([, i]) => i);
+    if (removedCols.length) {
+      const cells = [...this.wrap.querySelectorAll('tr')].flatMap(tr => removedCols.map(i => tr.children[i]).filter(Boolean));
+      await Promise.all(cells.map(c => c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, fill: 'forwards' }).finished));
+      await sleep(80);
+    }
+    // 2) 消える行を残像として描く（フィルタ・LIMIT・DISTINCT の束ね）
+    const toRids = new Set(to.rid);
+    const memberTarget = new Map();
+    if (to.members) to.members.forEach((ms, ri) => (ms || []).forEach(m => memberTarget.set(m, to.rid[ri])));
+    const ghosts = [];
+    for (const [rid, rect] of oldRows) {
+      if (toRids.has(rid)) continue;
+      const tr = oldRowEls.get(rid);
+      const g = document.createElement('div'); g.className = 'ghost';
+      g.style.left = (rect.left - wrapRect.left + this.wrap.scrollLeft) + 'px'; g.style.top = (rect.top - wrapRect.top + this.wrap.scrollTop) + 'px';
+      [...tr.children].forEach((td, i) => { if (removedCols.includes(i)) return; const s = document.createElement('span'); s.textContent = td.textContent; s.style.width = td.getBoundingClientRect().width + 'px'; g.appendChild(s); });
+      ghosts.push({ g, rid, rect });
+    }
+    // 3) 新しい表を描いて位置を測る
+    this.render(idx);
+    const newRows = new Map(); this.wrap.querySelectorAll('tbody tr').forEach(tr => newRows.set(tr.dataset.rid, tr));
+    const anims = [];
+    ghosts.forEach(({ g }) => this.wrap.appendChild(g));
+    for (const { g, rid, rect } of ghosts) {
+      const target = memberTarget.get(rid);
+      if (target && newRows.has(target)) {  // 束ねる: グループ行の位置へ寄せて消える
+        const tr = newRows.get(target).getBoundingClientRect();
+        anims.push(g.animate([{ transform: 'translateY(0)', opacity: .9 }, { transform: `translateY(${tr.top - rect.top}px)`, opacity: 0 }], { duration: 600, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' }).finished);
+      } else {  // 落ちる: 右へスライドして消える
+        anims.push(g.animate([{ transform: 'translateX(0)', opacity: .9 }, { transform: 'translateX(40px)', opacity: 0 }], { duration: 500, easing: 'ease-in', fill: 'forwards' }).finished);
+      }
+    }
+    for (const [rid, tr] of newRows) {
+      const old = oldRows.get(rid);
+      const nr = tr.getBoundingClientRect();
+      if (old) {  // FLIP: 前の位置から新しい位置へ
+        const dy = old.top - nr.top;
+        if (Math.abs(dy) > 1) anims.push(tr.animate([{ transform: `translateY(${dy}px)` }, { transform: 'translateY(0)' }], { duration: 550, easing: 'cubic-bezier(.2,.7,.2,1)' }).finished);
+      } else {  // 新しく現れる行（GROUP/DISTINCT の束ね行、JOIN で増えた行）
+        anims.push(tr.animate([{ opacity: 0, transform: 'translateX(-10px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 450, delay: 150, easing: 'ease-out' }).finished);
+      }
+    }
+    if (to.anim === 'appear' && !oldRows.size) {
+      [...newRows.values()].forEach((tr, i) => anims.push(tr.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: i * 30, fill: 'backwards' }).finished));
+    }
+    await Promise.all(anims); ghosts.forEach(({ g }) => g.remove());
+    this.busy = false;
+  }
+}
+function mountStage(el, steps, qEl) {
+  return new Stage(el, steps, { onStep: (i, step) => {
+    if (!qEl) return;
+    qEl.querySelectorAll('.qline').forEach(q => q.classList.toggle('active', (step.lines || []).includes(q.dataset.line)));
+  } });
+}
+
+/* ============ views ============ */
+const app = $('#app');
+function shell(inner, crumbs = []) {
+  const rank = currentRank(); const total = Object.keys(store.get().results).length;
+  app.innerHTML = `<div class="hdr"><div class="hdr-in"><a class="logo" href="#/">SQL <span>Reading</span> Dojo</a><span class="sp"></span>
+    <span class="pill">称号 <b>${esc(rank.rank)}</b></span><span class="pill">回答 <b>${total}</b></span></div></div>
+    ${memOnly ? '<div class="warn">この環境では進捗を保存できません（localStorage 無効）。このタブを閉じると進捗は消えます。</div>' : ''}
+    <main>${crumbs.length ? `<div class="crumbs">${crumbs.map(c => c.href ? `<a href="${c.href}">${esc(c.t)}</a>` : `<span>${esc(c.t)}</span>`).join('<span>/</span>')}</div>` : ''}${inner}</main>
+    <footer><span>ミツキ化粧品のデータはすべて架空です</span><span>content ${esc(D.hash)}</span></footer>`;
+}
+
+function viewHome() {
+  const rank = currentRank();
+  const cards = LEVELS.map((lv, i) => {
+    const st = levelStats(lv.id); const n = byLevel(lv.id).length; const unlocked = isUnlocked(i);
+    const badge = !n ? '<span class="badge">準備中</span>' : !unlocked ? '<span class="badge">🔒 未解放</span>' : st.mastery >= .8 ? '<span class="badge ok">合格</span>' : '<span class="badge on">挑戦中</span>';
+    const inner = `<div class="top"><span class="badge">Lv${i}</span><h3>${esc(lv.rank)} — ${esc(lv.title)}</h3></div><p>${esc(lv.summary)}</p>
+      <div class="bar ${st.mastery >= .8 ? 'ok' : ''}"><i style="width:${Math.round(st.mastery * 100)}%"></i></div>
+      <div class="meta"><span>${n} レッスン</span><span>${badge}</span><span>正答 ${st.ok}/${st.total}</span></div>`;
+    return unlocked && n ? `<a class="card lvl" href="#/${lv.id}">${inner}</a>` : `<div class="card lvl locked">${inner}</div>`;
+  }).join('');
+  shell(`<div class="hero"><div class="rank">現在の称号<b>${esc(rank.rank)}</b></div><div style="color:var(--text3);max-width:560px">
+      予測して、動きで答え合わせして、要件とのズレに気づく。1 レッスン 5 分。<br>レベル内の正答率 80% で次のレベルが開きます。</div></div>
+    <div class="grid">${cards}</div>`);
+}
+
+function viewLevel(levelId) {
+  const idx = LEVELS.findIndex(l => l.id === levelId); const lv = LEVELS[idx];
+  if (!lv || !isUnlocked(idx)) { location.hash = '#/'; return; }
+  const st = levelStats(levelId);
+  const items = byLevel(levelId).map((l, i) => {
+    const s = lessonStatus(l);
+    return `<a class="card ls" href="#/${levelId}/${l.id}"><span class="n">${String(i + 1).padStart(2, '0')}</span>
+      <span class="t">${esc(l.title)}<small>約 ${l.minutes || 5} 分 · 課題 ${l.tasks.length}</small></span>
+      <span class="st ${s === 'done' ? 'ok' : ''}">${s === 'done' ? '✓ 完了' : s === 'partial' ? '途中' : ''}</span></a>`;
+  }).join('');
+  shell(`<h1>Lv${idx} ${esc(lv.rank)} — ${esc(lv.title)}</h1><p class="sub">${esc(lv.summary)}</p>
+    <div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:18px"><div style="flex:1"><div class="sec">このレベルの正答率</div>
+      <div class="bar ${st.mastery >= .8 ? 'ok' : ''}"><i style="width:${Math.round(st.mastery * 100)}%"></i></div></div>
+      <div><b>${Math.round(st.mastery * 100)}%</b> <span style="color:var(--text3)">（${st.ok}/${st.total}・80% で次が開く）</span></div></div>
+    <div class="lessons">${items}</div>`, [{ t: 'ホーム', href: '#/' }, { t: `Lv${idx} ${lv.rank}` }]);
+}
+
+/* ---- lesson ---- */
+let lessonState = null;  // {lesson, ti}
+function viewLesson(levelId, lessonId) {
+  const lesson = lessonById(lessonId); const lidx = LEVELS.findIndex(l => l.id === levelId);
+  if (!lesson || !isUnlocked(lidx)) { location.hash = '#/'; return; }
+  store.visit(lessonId);
+  if (!lessonState || lessonState.lesson !== lesson) lessonState = { lesson, ti: 0, intro: true };
+  renderLesson(levelId, lidx);
+}
+function renderLesson(levelId, lidx) {
+  const { lesson, ti } = lessonState; const lv = LEVELS[lidx];
+  const crumbs = [{ t: 'ホーム', href: '#/' }, { t: `Lv${lidx} ${lv.rank}`, href: `#/${levelId}` }, { t: lesson.title }];
+  const dots = `<div class="dots">${lesson.tasks.map((t, i) => `<i class="${i < ti ? 'done' : i === ti ? 'cur' : ''}"></i>`).join('')}</div>`;
+  if (lessonState.intro) {
+    shell(`<h1>${esc(lesson.title)}</h1><p class="sub">約 ${lesson.minutes || 5} 分 · 課題 ${lesson.tasks.length}</p>
+      <div class="card">${md(lesson.intro)}</div>
+      <div class="nav"><a class="btn" href="#/${levelId}">← レッスン一覧</a><span class="sp"></span><button class="btn pri" data-go="start">課題へ進む →</button></div>`, crumbs);
+    $('[data-go=start]').onclick = () => { lessonState.intro = false; renderLesson(levelId, lidx); };
+    return;
+  }
+  if (ti >= lesson.tasks.length) { renderDone(levelId, lidx, crumbs); return; }
+  const task = lesson.tasks[ti];
+  shell(`<h1 style="font-size:20px">${esc(lesson.title)}</h1>${dots}<div class="task" id="task"></div>
+    <div class="nav"><button class="btn" data-go="intro">← 解説を読む</button><span class="sp"></span><button class="btn pri" id="next" disabled>次へ →</button></div>`, crumbs);
+  $('[data-go=intro]').onclick = () => { lessonState.intro = true; renderLesson(levelId, lidx); };
+  const next = $('#next'); next.onclick = () => { lessonState.ti++; renderLesson(levelId, lidx); scrollTo(0, 0); };
+  const enableNext = () => { next.disabled = false; next.focus({ preventScroll: true }); };
+  const host = $('#task');
+  ({ vocab: taskVocab, predict: taskPredict, quiz: taskQuiz, readline: taskReadline })[task.type](host, task, lesson, enableNext);
+}
+function renderDone(levelId, lidx, crumbs) {
+  const { lesson } = lessonState; const scored = lesson.tasks.filter(t => t.scored);
+  const ok = scored.filter(t => store.result(t.id)?.ok).length; const st = levelStats(levelId);
+  const list = byLevel(levelId); const ni = list.indexOf(lesson) + 1; const nextLesson = list[ni];
+  const unlockedNext = LEVELS[lidx + 1] && isUnlocked(lidx + 1) && byLevel(LEVELS[lidx + 1].id).length;
+  shell(`<div class="card done-card"><div class="sec">レッスン完了</div><div class="big">${ok} / ${scored.length}</div>
+    <p>${ok === scored.length ? '全問正解。' : '間違えた問題は解説をもう一度読んでおくと定着します。'}　このレベルの正答率 ${Math.round(st.mastery * 100)}%${st.mastery >= .8 ? '（合格ライン到達）' : ''}</p>
+    <div class="row">${nextLesson ? `<a class="btn pri" href="#/${levelId}/${nextLesson.id}">次のレッスン: ${esc(nextLesson.title)} →</a>` : unlockedNext ? `<a class="btn pri" href="#/${LEVELS[lidx + 1].id}">次のレベルへ →</a>` : ''}
+      <a class="btn" href="#/${levelId}">レッスン一覧</a><button class="btn" id="redo">このレッスンをやり直す</button></div></div>`, crumbs);
+  $('#redo').onclick = () => { store.resetLesson(lesson); lessonState = { lesson, ti: 0, intro: false }; renderLesson(levelId, lidx); };
+}
+
+/* ---- task renderers ---- */
+function twoPane(task, opts = {}) {
+  const lines = task.query || lessonState.lesson.query;
+  return `<div class="two"><div>${queryPanel(lines, opts)}<div class="trans" data-trans hidden></div></div><div class="stage" data-stage></div></div>`;
+}
+function taskVocab(host, task, lesson, done) {
+  host.innerHTML = `<div class="note">${md(task.text)}</div>${twoPane(task)}`;
+  const st = mountStage($('[data-stage]', host), task.steps, $('[data-q]', host));
+  setTimeout(() => st.play(), 400);
+  done();
+}
+function taskReadline(host, task, lesson, done) {
+  const lines = task.query || lesson.query;
+  host.innerHTML = `<div class="note">${md(task.text || '各行をクリックして読み下しを確認してください。')}</div>${twoPane(task, { clickable: true })}`;
+  const trans = $('[data-trans]', host); trans.hidden = false; trans.textContent = '行をクリックすると、その行の読み下しが出ます。';
+  const st = mountStage($('[data-stage]', host), task.steps, null);
+  const read = new Set();
+  const pick = q => {
+    const l = lines.find(x => x.id === q.dataset.line); read.add(l.id);
+    host.querySelectorAll('.qline').forEach(x => x.classList.toggle('active', x === q)); q.classList.add('read');
+    trans.innerHTML = `<b>${esc(l.clause)}</b>${esc(l.ja || '')}`;
+    const si = task.steps.findIndex(s => (s.lines || []).includes(l.id)); if (si >= 0) { st.stop(); st.render(si); }
+    if (read.size === lines.length) done();
+  };
+  host.querySelectorAll('.qline').forEach(q => { q.onclick = () => pick(q); q.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(q); } }; });
+}
+function choicesHTML(choices) {
+  return `<div class="choices">${choices.map((c, i) => `<button class="ch" data-i="${i}"><span class="k">${'ABCD'[i]}</span><span>${esc(c)}</span></button>`).join('')}</div>`;
+}
+function answerChoices(host, task, correctIdx, onAnswer) {
+  const prior = store.result(task.id);
+  const btns = [...host.querySelectorAll('.ch')];
+  const settle = (picked) => {
+    btns.forEach((b, i) => { b.disabled = true; if (i === correctIdx) b.classList.add('ok'); else if (i === picked) b.classList.add('ng'); });
+    const ok = picked === correctIdx;
+    const fb = document.createElement('div'); fb.className = `fb ${ok ? 'ok' : 'ng'}`;
+    fb.innerHTML = `<div class="h">${ok ? '正解' : '不正解'}</div>${md(task.explain || '')}`;
+    $('.choices', host).after(fb);
+    onAnswer(ok);
+  };
+  if (prior) { settle(prior.ok ? correctIdx : -1); return; }  // 既回答は結果だけ再表示
+  btns.forEach((b, i) => b.onclick = () => { store.record(task.id, i === correctIdx); settle(i); });
+}
+function taskQuiz(host, task, lesson, done) {
+  host.innerHTML = `<p class="prompt">${inline(task.prompt)}</p>${choicesHTML(task.choices)}`;
+  answerChoices(host, task, task.answer, () => done());
+}
+function taskPredict(host, task, lesson, done) {
+  const lines = task.query || lesson.query; const first = task.steps[0];
+  const correctIdx = task.choices.findIndex(c => String(c) === String(task.answer));
+  host.innerHTML = `<p class="prompt">${inline(task.prompt)}</p>
+    <div class="two"><div>${queryPanel(lines)}
+      <details class="inputs" open><summary>入力の表（${esc(first.rows.length)} 行）を見る</summary><div class="stage" data-input></div></details></div>
+    <div><div class="sec">先に答える</div>${choicesHTML(task.choices.map(c => typeof c === 'number' ? c.toLocaleString('ja-JP') : c))}<div data-reveal></div></div></div>`;
+  // 入力表: FROM 段階だけの簡易ステージ
+  const inp = $('[data-input]', host); new Stage(inp, [first]); $('.ctl', inp).remove(); $('.phases', inp).remove();
+  answerChoices(host, task, correctIdx, () => {
+    const rv = $('[data-reveal]', host);
+    rv.innerHTML = `<div class="sec" style="margin-top:8px">実行順に答え合わせ</div><div class="stage" data-stage></div>`;
+    const st = mountStage($('[data-stage]', rv), task.steps, $('[data-q]', host));
+    $('.inputs', host).open = false;
+    setTimeout(() => st.play(), 300);
+    done();
+  });
+}
+
+/* ============ router ============ */
+function route() {
+  tip.hidden = true;
+  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  if (!parts.length) { lessonState = null; return viewHome(); }
+  if (parts.length === 1) { lessonState = null; return viewLevel(parts[0]); }
+  return viewLesson(parts[0], parts[1]);
+}
+addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>

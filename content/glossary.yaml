@@ -1,0 +1,136 @@
+# 用語辞書。クエリ中の語にホバーすると出る。key は大文字で照合する。
+# kind: clause（句）/ func（関数）/ op（演算子）/ concept（概念）
+# alteryx: 対応するツール。無ければ null
+SELECT:
+  kind: clause
+  ja: 表示する列を選ぶ・名前を変える・式で新しい列を作る
+  alteryx: セレクト（＋フォーミュラ）
+  note: 先頭に書くが、実行されるのは WHERE や GROUP BY の後
+FROM:
+  kind: clause
+  ja: どの表を使うか決める
+  alteryx: 入力データ
+WHERE:
+  kind: clause
+  ja: 条件に合う行だけ残す（列ではなく行を絞る）
+  alteryx: フィルター
+  note: GROUP BY の前に効く。集計結果で絞るのは HAVING
+ORDER BY:
+  kind: clause
+  ja: 並べ替える。ASC 昇順（既定）/ DESC 降順
+  alteryx: ソート
+LIMIT:
+  kind: clause
+  ja: 先頭から N 行だけ出す
+  alteryx: サンプル
+  note: ORDER BY がないと「どの N 行か」は保証されない
+DISTINCT:
+  kind: clause
+  ja: 表示する列の組み合わせが同じ行を 1 行にまとめる
+  alteryx: ユニーク
+  note: 重複が出た原因を直さず DISTINCT で隠すと別の集計で再発する
+GROUP BY:
+  kind: clause
+  ja: 同じ値の行を 1 行に束ねる。束ねた行に対して集計関数を使う
+  alteryx: 集計（Summarize）のグループ列
+HAVING:
+  kind: clause
+  ja: 集計した後の行を条件で絞る
+  alteryx: 集計の後ろに置くフィルター
+JOIN:
+  kind: clause
+  ja: 2 つの表をキーでつなぐ
+  alteryx: 結合（Join）
+INNER JOIN:
+  kind: clause
+  ja: 両方の表にキーがある行だけ残す
+  alteryx: 結合の J 出力
+LEFT JOIN:
+  kind: clause
+  ja: 左の表は全部残し、右の表は合えばつける（合わなければ NULL）
+  alteryx: 結合の J 出力 + L 出力をユニオン
+ON:
+  kind: clause
+  ja: JOIN でつなぐキーの条件
+  alteryx: 結合のキー設定
+AS:
+  kind: op
+  ja: 別名を付ける（列にも表にも）
+  alteryx: セレクトの列名変更
+AND:
+  kind: op
+  ja: 両方の条件を満たす
+  alteryx: フィルターの AND
+OR:
+  kind: op
+  ja: どちらかの条件を満たす
+  alteryx: フィルターの OR
+NOT:
+  kind: op
+  ja: 条件を反転する
+  alteryx: フィルターの否定
+IN:
+  kind: op
+  ja: 列の値が、カッコ内のどれかに一致する
+  alteryx: フィルターの IN
+LIKE:
+  kind: op
+  ja: 文字列のパターン一致。% は任意の文字列、_ は任意の 1 文字
+  alteryx: フィルターの Contains / StartsWith
+BETWEEN:
+  kind: op
+  ja: 範囲内（両端を含む）
+  alteryx: フィルターの >= AND <=
+IS NULL:
+  kind: op
+  ja: 値が NULL（空）かどうか。= NULL では判定できない
+  alteryx: フィルターの IsNull()
+IS NOT NULL:
+  kind: op
+  ja: 値が NULL でないかどうか
+  alteryx: フィルターの !IsNull()
+NULL:
+  kind: concept
+  ja: 「値がない」印。0 でも空文字でもない。比較すると真にも偽にもならない
+  alteryx: Null()
+  note: WHERE region = NULL は 1 行も残らない。IS NULL を使う
+ASC:
+  kind: op
+  ja: 昇順（小さい → 大きい）。省略時の既定
+  alteryx: ソートの昇順
+DESC:
+  kind: op
+  ja: 降順（大きい → 小さい）
+  alteryx: ソートの降順
+COUNT:
+  kind: func
+  ja: 行数を数える。COUNT(*) は全行、COUNT(列) は NULL 以外
+  alteryx: 集計の Count
+SUM:
+  kind: func
+  ja: 合計。NULL は無視される
+  alteryx: 集計の Sum
+AVG:
+  kind: func
+  ja: 平均。NULL の行は分母にも入らない
+  alteryx: 集計の Avg
+MIN:
+  kind: func
+  ja: 最小値
+  alteryx: 集計の Min
+MAX:
+  kind: func
+  ja: 最大値
+  alteryx: 集計の Max
+COUNTIF:
+  kind: func
+  ja: 条件に合う行数を数える（BigQuery）
+  alteryx: フィルター → 集計の Count
+DATE:
+  kind: func
+  ja: 日付型。DATE(timestamp, 'Asia/Tokyo') でタイムゾーンを指定して日付にする
+  alteryx: DateTime ツール
+TIMESTAMP:
+  kind: concept
+  ja: 日時。BigQuery では常に UTC で保存される
+  alteryx: DateTime 型
