@@ -91,6 +91,7 @@ h2{font-size:18px;font-weight:600;letter-spacing:-.01em;margin:26px 0 12px}
 .tip{position:fixed;z-index:50;max-width:320px;background:var(--surface);border:1px solid var(--line2);border-radius:var(--r2);padding:10px 12px;font-size:13px;color:var(--text2);box-shadow:0 8px 30px rgba(0,0,0,.5);pointer-events:none}
 .tip b{color:var(--text);font-family:var(--mono)}
 .tip .ax{color:var(--emerald);font-size:12px;margin-top:4px}
+.sub.can{color:var(--emerald)}
 .tip .nt{color:var(--text3);font-size:12px;margin-top:4px}
 .trans{margin-top:10px;padding:12px 14px;background:var(--surface);border-radius:var(--r2);color:var(--text2);min-height:44px;font-size:14px}
 .trans b{color:var(--accent2);font-family:var(--mono);font-weight:600;margin-right:8px}
@@ -156,7 +157,7 @@ footer{max-width:1200px;margin:0 auto;padding:0 24px 30px;color:var(--text4);fon
 <body>
 <div id="app"></div>
 <div id="tip" class="tip" hidden></div>
-<script src="lessons.js?v=96cd18eb33fe"></script>
+<script src="lessons.js?v=aa0bd2941171"></script>
 <script>
 'use strict';
 /* ============ util ============ */
@@ -269,9 +270,14 @@ function highlight(sql) {
 }
 const tip = $('#tip');
 function showTip(el) {
-  const g = GLOSS[el.dataset.term]; if (!g) return;
-  tip.innerHTML = `<b>${esc(el.dataset.term)}</b><div>${esc(g.ja)}</div>` +
-    (g.alteryx ? `<div class="ax">Alteryx: ${esc(g.alteryx)}</div>` : '') + (g.note ? `<div class="nt">${esc(g.note)}</div>` : '');
+  if (el.dataset.can !== undefined) {
+    if (!el.dataset.can) return;
+    tip.innerHTML = `<b>${esc(el.textContent)} を修了するとできること</b><div>${esc(el.dataset.can)}</div>`;
+  } else {
+    const g = GLOSS[el.dataset.term]; if (!g) return;
+    tip.innerHTML = `<b>${esc(el.dataset.term)}</b><div>${esc(g.ja)}</div>` +
+      (g.alteryx ? `<div class="ax">Alteryx: ${esc(g.alteryx)}</div>` : '') + (g.note ? `<div class="nt">${esc(g.note)}</div>` : '');
+  }
   tip.hidden = false;
   const r = el.getBoundingClientRect(); const tw = tip.offsetWidth, th = tip.offsetHeight;
   let x = r.left, y = r.bottom + 8;
@@ -279,10 +285,10 @@ function showTip(el) {
   if (y + th > innerHeight - 12) y = r.top - th - 8;
   tip.style.left = x + 'px'; tip.style.top = y + 'px';
 }
-document.addEventListener('mouseover', e => { const t = e.target.closest('[data-term]'); if (t) showTip(t); });
-document.addEventListener('mouseout', e => { if (e.target.closest('[data-term]')) tip.hidden = true; });
-document.addEventListener('focusin', e => { const t = e.target.closest('[data-term]'); if (t) showTip(t); });
-document.addEventListener('focusout', e => { if (e.target.closest('[data-term]')) tip.hidden = true; });
+document.addEventListener('mouseover', e => { const t = e.target.closest('[data-term],[data-can]'); if (t) showTip(t); });
+document.addEventListener('mouseout', e => { if (e.target.closest('[data-term],[data-can]')) tip.hidden = true; });
+document.addEventListener('focusin', e => { const t = e.target.closest('[data-term],[data-can]'); if (t) showTip(t); });
+document.addEventListener('focusout', e => { if (e.target.closest('[data-term],[data-can]')) tip.hidden = true; });
 
 function queryPanel(lines, opts = {}) {
   return `<div class="qpanel" data-q>${lines.map((l, i) =>
@@ -435,7 +441,7 @@ function viewHome() {
   const cards = LEVELS.map((lv, i) => {
     const st = levelStats(lv.id); const n = byLevel(lv.id).length; const unlocked = isUnlocked(i);
     const badge = !n ? '<span class="badge">準備中</span>' : !unlocked ? '<span class="badge">🔒 未解放</span>' : st.mastery >= .8 ? '<span class="badge ok">合格</span>' : '<span class="badge on">挑戦中</span>';
-    const inner = `<div class="top"><span class="badge">Lv${i}</span><h3>${esc(lv.rank)} — ${esc(lv.title)}</h3></div><p>${esc(lv.summary)}</p>
+    const inner = `<div class="top"><span class="badge" data-can="${esc(lv.can || '')}" tabindex="0">Lv${i}</span><h3>${esc(lv.rank)} — ${esc(lv.title)}</h3></div><p>${esc(lv.summary)}</p>
       <div class="bar ${st.mastery >= .8 ? 'ok' : ''}"><i style="width:${Math.round(st.mastery * 100)}%"></i></div>
       <div class="meta"><span>${n} レッスン</span><span>${badge}</span><span>正答 ${st.ok}/${st.total}</span></div>`;
     return unlocked && n ? `<a class="card lvl" href="#/${lv.id}">${inner}</a>` : `<div class="card lvl locked">${inner}</div>`;
@@ -455,7 +461,7 @@ function viewLevel(levelId) {
       <span class="t">${esc(l.title)}<small>約 ${l.minutes || 5} 分 · 課題 ${l.tasks.length}</small></span>
       <span class="st ${s === 'done' ? 'ok' : ''}">${s === 'done' ? '✓ 完了' : s === 'partial' ? '途中' : ''}</span></a>`;
   }).join('');
-  shell(`<h1>Lv${idx} ${esc(lv.rank)} — ${esc(lv.title)}</h1><p class="sub">${esc(lv.summary)}</p>
+  shell(`<h1>Lv${idx} ${esc(lv.rank)} — ${esc(lv.title)}</h1><p class="sub">${esc(lv.summary)}</p>${lv.can ? `<p class="sub can">修了するとできること: ${esc(lv.can)}</p>` : ''}
     <div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:18px"><div style="flex:1"><div class="sec">このレベルの正答率</div>
       <div class="bar ${st.mastery >= .8 ? 'ok' : ''}"><i style="width:${Math.round(st.mastery * 100)}%"></i></div></div>
       <div><b>${Math.round(st.mastery * 100)}%</b> <span style="color:var(--text3)">（${st.ok}/${st.total}・80% で次が開く）</span></div></div>

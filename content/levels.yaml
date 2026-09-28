@@ -3,35 +3,44 @@
   rank: 地図
   title: クエリの読み方の全体像
   summary: SQL とは何か。書かれた順と実行される順のズレ。
+  can: "クエリを「書かれた順」ではなく「実行される順」で読める。FROM から目で追い始められる"
 - id: L1
   rank: 語彙
   title: 基本の 6 語
   summary: FROM / SELECT / WHERE / NULL / ORDER BY / LIMIT / DISTINCT
+  can: "6 語を見て、表が何行・何列になるかを予測できる（Alteryx: Input / Select / Filter / Sort / Unique）"
 - id: L2
   rank: 集計係
   title: 集計と粒度
   summary: COUNT / SUM / AVG、GROUP BY、HAVING、「1 行が何の単位か」
+  can: "「この表の 1 行は何の単位か」を答えられる。GROUP BY を見て粒度の取り違えに気づける（Alteryx: Summarize）"
 - id: L3
   rank: 結合師
   title: JOIN と 3 つの罠
   summary: INNER / LEFT / FULL、fan-out、LEFT→INNER 化、NOT IN と NULL
+  can: "JOIN を見て「行が増える / 消える / NULL が混ざる」のどれが起きるかを予測できる（Alteryx: Join の L / J / R）"
 - id: L4
   rank: 変換師
   title: 変換・日付・割り算
   summary: CASE / COALESCE / CAST、日付関数、UTC と JST、SAFE_DIVIDE
+  can: "CASE・日付・割り算の行を読んで、UTC/JST や 0 除算など数値がズレる箇所を指摘できる（Alteryx: Formula / DateTime）"
 - id: L5
   rank: 読解者
   title: 構造を読む
   summary: サブクエリ、WITH（CTE）、目的から逆算して読む
+  can: "WITH やサブクエリで分割された 100 行級のクエリを、部品ごとの目的に分解して読める（Alteryx: コンテナ / マクロ）"
 - id: L6
   rank: 分析官
   title: ウィンドウ関数
   summary: OVER / PARTITION BY、ROW_NUMBER、LAG、QUALIFY
+  can: "「顧客ごとの最新 1 件」「前月比」といったウィンドウ関数の意図が読める（Alteryx: Multi-Row Formula / Running Total）"
 - id: L7
   rank: BQ使い
   title: BigQuery 固有の作法
   summary: パーティション、スキャン量、ARRAY / STRUCT / UNNEST
+  can: "パーティションや UNNEST など BigQuery 固有の書き方を見て、スキャン量や ARRAY 展開の意味が分かる"
 - id: L8
   rank: 実務
   title: 実務級クエリ × 要件書
   summary: 100 行級クエリのズレ探し。卒業試験
+  can: "要件書とクエリを突き合わせて「ここが要件と違う」と根拠つきで指摘できる"
