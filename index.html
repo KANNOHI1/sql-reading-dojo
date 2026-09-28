@@ -157,7 +157,7 @@ footer{max-width:1200px;margin:0 auto;padding:0 24px 30px;color:var(--text4);fon
 <body>
 <div id="app"></div>
 <div id="tip" class="tip" hidden></div>
-<script src="lessons.js?v=aa0bd2941171"></script>
+<script src="lessons.js?v=ea1c32cd6c9d"></script>
 <script>
 'use strict';
 /* ============ util ============ */
@@ -234,9 +234,9 @@ function lessonStatus(lesson) {
   if (done || store.get().visited[lesson.id]) return 'partial';
   return 'todo';
 }
-function currentRank() {
-  let r = LEVELS[0];
-  LEVELS.forEach((lv, i) => { if (isUnlocked(i) && byLevel(lv.id).length) r = lv; });
+function currentLevel() {
+  let r = 0;
+  LEVELS.forEach((lv, i) => { if (isUnlocked(i) && byLevel(lv.id).length) r = i; });
   return r;
 }
 
@@ -428,25 +428,25 @@ function mountStage(el, steps, qEl) {
 /* ============ views ============ */
 const app = $('#app');
 function shell(inner, crumbs = []) {
-  const rank = currentRank(); const total = Object.keys(store.get().results).length;
+  const cur = currentLevel(); const total = Object.keys(store.get().results).length;
   app.innerHTML = `<div class="hdr"><div class="hdr-in"><a class="logo" href="#/">SQL <span>Reading</span> Dojo</a><span class="sp"></span>
-    <span class="pill">称号 <b>${esc(rank.rank)}</b></span><span class="pill">回答 <b>${total}</b></span></div></div>
+    <span class="pill">現在 <b>Lv${cur}</b></span><span class="pill">回答 <b>${total}</b></span></div></div>
     ${memOnly ? '<div class="warn">この環境では進捗を保存できません（localStorage 無効）。このタブを閉じると進捗は消えます。</div>' : ''}
     <main>${crumbs.length ? `<div class="crumbs">${crumbs.map(c => c.href ? `<a href="${c.href}">${esc(c.t)}</a>` : `<span>${esc(c.t)}</span>`).join('<span>/</span>')}</div>` : ''}${inner}</main>
     <footer><span>ミツキ化粧品のデータはすべて架空です</span><span>content ${esc(D.hash)}</span></footer>`;
 }
 
 function viewHome() {
-  const rank = currentRank();
+  const cur = currentLevel();
   const cards = LEVELS.map((lv, i) => {
     const st = levelStats(lv.id); const n = byLevel(lv.id).length; const unlocked = isUnlocked(i);
     const badge = !n ? '<span class="badge">準備中</span>' : !unlocked ? '<span class="badge">🔒 未解放</span>' : st.mastery >= .8 ? '<span class="badge ok">合格</span>' : '<span class="badge on">挑戦中</span>';
-    const inner = `<div class="top"><span class="badge" data-can="${esc(lv.can || '')}" tabindex="0">Lv${i}</span><h3>${esc(lv.rank)} — ${esc(lv.title)}</h3></div><p>${esc(lv.summary)}</p>
+    const inner = `<div class="top"><span class="badge" data-can="${esc(lv.can || '')}" tabindex="0">Lv${i}</span><h3>${esc(lv.title)}</h3></div><p>${esc(lv.summary)}</p>
       <div class="bar ${st.mastery >= .8 ? 'ok' : ''}"><i style="width:${Math.round(st.mastery * 100)}%"></i></div>
       <div class="meta"><span>${n} レッスン</span><span>${badge}</span><span>正答 ${st.ok}/${st.total}</span></div>`;
     return unlocked && n ? `<a class="card lvl" href="#/${lv.id}">${inner}</a>` : `<div class="card lvl locked">${inner}</div>`;
   }).join('');
-  shell(`<div class="hero"><div class="rank">現在の称号<b>${esc(rank.rank)}</b></div><div style="color:var(--text3);max-width:560px">
+  shell(`<div class="hero"><div class="rank">現在のレベル<b>Lv${cur}</b></div><div style="color:var(--text3);max-width:560px">
       予測して、動きで答え合わせして、要件とのズレに気づく。1 レッスン 5 分。<br>レベル内の正答率 80% で次のレベルが開きます。</div></div>
     <div class="grid">${cards}</div>`);
 }
@@ -461,11 +461,11 @@ function viewLevel(levelId) {
       <span class="t">${esc(l.title)}<small>約 ${l.minutes || 5} 分 · 課題 ${l.tasks.length}</small></span>
       <span class="st ${s === 'done' ? 'ok' : ''}">${s === 'done' ? '✓ 完了' : s === 'partial' ? '途中' : ''}</span></a>`;
   }).join('');
-  shell(`<h1>Lv${idx} ${esc(lv.rank)} — ${esc(lv.title)}</h1><p class="sub">${esc(lv.summary)}</p>${lv.can ? `<p class="sub can">修了するとできること: ${esc(lv.can)}</p>` : ''}
+  shell(`<h1>Lv${idx} — ${esc(lv.title)}</h1><p class="sub">${esc(lv.summary)}</p>${lv.can ? `<p class="sub can">修了するとできること: ${esc(lv.can)}</p>` : ''}
     <div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:18px"><div style="flex:1"><div class="sec">このレベルの正答率</div>
       <div class="bar ${st.mastery >= .8 ? 'ok' : ''}"><i style="width:${Math.round(st.mastery * 100)}%"></i></div></div>
       <div><b>${Math.round(st.mastery * 100)}%</b> <span style="color:var(--text3)">（${st.ok}/${st.total}・80% で次が開く）</span></div></div>
-    <div class="lessons">${items}</div>`, [{ t: 'ホーム', href: '#/' }, { t: `Lv${idx} ${lv.rank}` }]);
+    <div class="lessons">${items}</div>`, [{ t: 'ホーム', href: '#/' }, { t: `Lv${idx}` }]);
 }
 
 /* ---- lesson ---- */
@@ -479,7 +479,7 @@ function viewLesson(levelId, lessonId) {
 }
 function renderLesson(levelId, lidx) {
   const { lesson, ti } = lessonState; const lv = LEVELS[lidx];
-  const crumbs = [{ t: 'ホーム', href: '#/' }, { t: `Lv${lidx} ${lv.rank}`, href: `#/${levelId}` }, { t: lesson.title }];
+  const crumbs = [{ t: 'ホーム', href: '#/' }, { t: `Lv${lidx}`, href: `#/${levelId}` }, { t: lesson.title }];
   const dots = `<div class="dots">${lesson.tasks.map((t, i) => `<i class="${i < ti ? 'done' : i === ti ? 'cur' : ''}"></i>`).join('')}</div>`;
   if (lessonState.intro) {
     shell(`<h1>${esc(lesson.title)}</h1><p class="sub">約 ${lesson.minutes || 5} 分 · 課題 ${lesson.tasks.length}</p>
